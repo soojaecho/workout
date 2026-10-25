@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="오늘의 운동">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1f5f7a">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>오늘의 운동</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* 레이아웃: 휴대폰 한 손 조작, 위에서 아래로 오늘 할 일 순서대로. 상단에 오늘/기록 전환 */
+:root{
+  --bg:#f3f5f6; --surface:#ffffff; --fg:#1b2328; --muted:#5e6b73; --line:#d9dfe2;
+  --accent:#1f5f7a; --accent-soft:#e1edf2; --done:#2f7d4f; --done-soft:#e3f1e8; --warn:#a4502a; --warn-soft:#f7e9e2;
+  --sans:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171a; --surface:#1b2226; --fg:#e6ecef; --muted:#98a6ae; --line:#2c363c;
+  --accent:#6fb3d1; --accent-soft:#1d3440; --done:#6cc28f; --done-soft:#1d3327; --warn:#e39a74; --warn-soft:#3a2620; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171a; --surface:#1b2226; --fg:#e6ecef; --muted:#98a6ae; --line:#2c363c;
+  --accent:#6fb3d1; --accent-soft:#1d3440; --done:#6cc28f; --done-soft:#1d3327; --warn:#e39a74; --warn-soft:#3a2620; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);-webkit-text-size-adjust:100%;color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.55}
+.wrap{max-width:560px;margin:0 auto;padding-block:calc(16px + env(safe-area-inset-top,0px)) calc(48px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:18px}
+.views{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.views button{font:inherit;font-weight:500;padding:10px 0;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.views button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+header{display:flex;flex-direction:column;gap:4px}
+.date{color:var(--muted);font-size:13px;font-family:var(--mono);letter-spacing:.02em}
+h1{margin:0;font-size:24px;font-weight:700;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:500}
+.chip.ok{background:var(--done-soft);color:var(--done)}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tabs button{font:inherit;font-weight:500;padding:9px 0;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.flow{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.flow div{padding:8px 6px;text-align:center;font-size:12px;color:var(--muted);border-right:1px solid var(--line)}
+.flow div:last-child{border-right:0}
+.flow b{display:block;font-family:var(--mono);font-size:15px;color:var(--fg)}
+.flow .main{background:var(--accent-soft)}
+.flow .main b{color:var(--accent)}
+h2{margin:6px 0 0;font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.06em}
+.list{display:flex;flex-direction:column;gap:10px}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ex.complete{border-color:var(--done)}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.name{font-weight:700;font-size:16px;min-width:0}
+.rx{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap}
+.sets{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.set{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:transparent;color:var(--muted);font:600 14px var(--mono);cursor:pointer}
+.set.on{background:var(--done);border-color:var(--done);color:var(--surface)}
+.wt{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.wt input{width:68px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:500 14px var(--mono);text-align:right}
+details summary{cursor:pointer;font-size:13px;color:var(--accent);list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"+ "}
+details[open] summary::before{content:"− "}
+details ul{margin:8px 0 0;padding-left:18px;font-size:14px}
+details ul li+li{margin-top:3px}
+.yt{display:inline-block;margin-top:8px;font-size:13px;color:var(--accent)}
+.note{font-size:13px;color:var(--warn);background:var(--warn-soft);padding:6px 10px;border-radius:6px}
+.save{font:inherit;font-weight:700;font-size:16px;padding:14px;border-radius:10px;border:0;background:var(--accent);color:var(--bg);cursor:pointer}
+.save.saved{background:var(--done)}
+.msg{font-size:13px;color:var(--muted);text-align:center;min-height:1.2em}
+.knee{background:var(--warn-soft);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.knee h3{margin:0;font-size:15px;color:var(--warn)}
+.knee ul{margin:0;padding-left:18px;font-size:14px}
+.rest{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.rules{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.rules b{color:var(--fg);font-weight:500}
+/* 기록 */
+.week{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.week .big{font-family:var(--mono);font-size:28px;font-weight:600}
+.week .big small{font-size:15px;color:var(--muted);font-weight:500}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.days div{text-align:center;font-size:12px;color:var(--muted);padding:6px 0;border-radius:6px;background:var(--bg)}
+.days div.on{background:var(--done);color:var(--surface);font-weight:600}
+.days div.today{outline:1.5px solid var(--accent)}
+.log{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.log .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.log .d{font-family:var(--mono);font-size:14px;font-weight:600}
+.log .tag{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.log .detail{font-size:13px;color:var(--muted)}
+.del{font:inherit;font-size:12px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:6px;padding:3px 8px;cursor:pointer}
+.del.arm{border-color:var(--warn);color:var(--warn)}
+.prog{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.prog div{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;border-top:1px solid var(--line);font-size:14px}
+.prog div:first-child{border-top:0}
+.prog span:last-child{font-family:var(--mono);font-size:13px;text-align:right;min-width:0;overflow-wrap:anywhere}
+.up{color:var(--done)}
+.empty{color:var(--muted);font-size:14px;background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:16px}
+.store{font-size:12px;color:var(--muted);text-align:center}
+.backup{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.backup p{margin:0;font-size:13px;color:var(--muted)}
+.bk-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bk-btns button,.bk-imp{font:inherit;font-weight:500;font-size:14px;text-align:center;padding:11px 0;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.bk-btns button{background:var(--accent);color:var(--bg)}
+.store{display:none}
+@media (prefers-reduced-motion:no-preference){.set,.save{transition:background .15s,border-color .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="views" role="group" aria-label="화면 선택">
+    <button id="v-today" data-v="today" aria-pressed="true">오늘</button>
+    <button id="v-log" data-v="log" aria-pressed="false">기록</button>
+  </div>
+
+  <div id="todayView" style="display:contents">
+    <header>
+      <div class="date" id="date"></div>
+      <h1 id="title">오늘의 운동</h1>
+      <div class="meta" id="meta"></div>
+    </header>
+    <div class="tabs" role="group" aria-label="루틴 선택">
+      <button id="tab-A" data-k="A">A</button>
+      <button id="tab-B" data-k="B">B</button>
+      <button id="tab-C" data-k="C">C</button>
+      <button id="tab-R" data-k="R">가벼운 날</button>
+    </div>
+    <div id="body" class="list"></div>
+    <section class="knee">
+      <h3>무릎 기준</h3>
+      <ul>
+        <li>운동 중 오금 통증이 생기면 그 종목은 바로 멈춥니다.</li>
+        <li>다음 날 걸을 때 당김이 평소보다 심하면, 다음 하체 날은 상체만 합니다.</li>
+        <li>레그 익스텐션, 레그 컬, 깊은 굴곡은 하지 않습니다.</li>
+      </ul>
+    </section>
+    <section class="rules">
+      <div><b>시작 무게</b> 가장 가벼운 칸에서 15회 해 보고, 마지막 2~3회가 힘들지만 자세가 유지되는 무게로 정합니다.</div>
+      <div><b>올리는 시점</b> 모든 세트에서 15회를 채우면 다음 번에 한 칸 올립니다.</div>
+      <div><b>세트 간 휴식</b> 60~90초.</div>
+    </section>
+  </div>
+
+  <div id="logView" class="list" hidden></div>
+  <section class="backup" id="backup" hidden>
+    <h2 style="margin:0">백업</h2>
+    <p>기록은 이 휴대폰 브라우저에만 저장됩니다. 휴대폰을 바꾸거나 사파리 기록을 지우기 전에 백업 파일을 저장해 두세요.</p>
+    <div class="bk-btns">
+      <button type="button" id="bkExport">백업 파일 저장</button>
+      <label class="bk-imp">백업 불러오기<input type="file" id="bkImport" accept=".json,application/json" hidden></label>
+    </div>
+    <div class="msg" id="bkMsg"></div>
+  </section>
+</div>
+
+<script>
+const START = new Date(2026,9,26); // 2026-10-26 월요일 시작
+const SEQ = ["A","B","C","A","B"]; // 요일과 상관없이 운동한 순서대로 돌아감
+/* 다음 루틴: 오늘 이전 마지막 근력 기록의 다음 순서. 오늘 이미 저장했으면 오늘 것 */
+function seqInfo(){
+  const ds=Object.keys(logs).sort();
+  if(logs[todayId] && logs[todayId].routine!=="R") return {k:logs[todayId].routine, seq:logs[todayId].seq ?? SEQ.indexOf(logs[todayId].routine)};
+  for(let i=ds.length-1;i>=0;i--){ const L=logs[ds[i]]; if(ds[i]<todayId && L.routine!=="R"){
+    const last = L.seq ?? SEQ.lastIndexOf(L.routine); const n=(last+1)%SEQ.length; return {k:SEQ[n],seq:n}; } }
+  return {k:"A",seq:0};
+}
+const nextRoutine = () => seqInfo().k;
+const DAYS = ["일","월","화","수","목","금","토"];
+const BODYWEIGHT = ["deadbug","plank","birddog","side","bridge","walk","pushup"];
+
+const EX = {
+  chest:{n:"체스트 프레스 머신",r:"12~15회",q:"체스트 프레스 머신 사용법",c:["의자 높이를 손잡이가 가슴 중간에 오도록 맞춥니다.","등과 엉덩이를 등받이에 붙인 채 밀어냅니다.","끝에서 팔꿈치를 완전히 잠그지 말고 천천히 돌아옵니다."]},
+  shoulder:{n:"숄더 프레스 머신",r:"12~15회",q:"숄더 프레스 머신 사용법",c:["시작할 때 손잡이가 어깨 높이에 오게 의자를 맞춥니다.","허리를 과하게 젖히지 않습니다.","위로 밀고 귀 옆 높이까지 천천히 내립니다."]},
+  pushdown:{n:"케이블 푸시다운",r:"12~15회",q:"케이블 트라이셉스 푸시다운",c:["로프나 짧은 바를 잡고 팔꿈치를 옆구리에 붙입니다.","팔꿈치는 고정한 채 아래로 끝까지 폅니다.","올라올 때 2초 정도 천천히."]},
+  lat:{n:"랫풀다운",r:"12~15회",q:"랫풀다운 머신 사용법",c:["허벅지 패드로 몸을 고정합니다.","가슴을 살짝 내밀고 바를 쇄골 쪽으로 당깁니다.","몸을 뒤로 크게 젖히지 않습니다."]},
+  row:{n:"시티드 로우 머신",r:"12~15회",q:"시티드 로우 머신 사용법",c:["가슴을 패드에 대고 앉습니다.","팔꿈치를 뒤로 보내며 어깨뼈를 모읍니다.","팔이 다 펴질 때까지 천천히 돌아옵니다."]},
+  curl:{n:"케이블 컬",r:"12~15회",q:"케이블 바이셉스 컬",c:["팔꿈치를 옆구리에 고정합니다.","몸을 흔들지 않고 팔만 굽힙니다."]},
+  legpress:{n:"레그프레스",r:"12~15회",q:"레그프레스 머신 사용법",note:"무릎 60도 이내로만. 오금이 당기면 바로 중단.",c:["의자를 뒤로 빼서 시작 자세에서 무릎이 많이 굽지 않게 맞춥니다.","발은 발판 위쪽에 어깨너비로 둡니다.","조금만 내렸다가 밀고, 끝에서 무릎을 잠그지 않습니다."]},
+  abd:{n:"힙 어브덕션 머신",r:"15회",q:"힙 어브덕션 머신 사용법",c:["다리 바깥쪽에 패드가 오게 앉습니다.","바깥으로 밀고 2초 동안 천천히 모읍니다."]},
+  bridge:{n:"글루트 브릿지",r:"15회",q:"글루트 브릿지 자세",c:["바닥에 누워 무릎을 세우고 발을 엉덩이에서 조금 멀리 둡니다.","엉덩이를 들어 어깨-엉덩이-무릎이 일직선이 되게 합니다.","오금이 당기면 발을 더 멀리 둡니다."]},
+  deadbug:{n:"데드버그",r:"한쪽 8~10회",q:"데드버그 운동",c:["누워서 허리를 바닥에 붙입니다.","반대쪽 팔과 다리를 천천히 뻗었다 돌아옵니다."]},
+  plank:{n:"플랭크",r:"30초",q:"플랭크 자세",c:["팔꿈치를 어깨 바로 아래에 둡니다.","머리부터 발끝까지 일직선, 엉덩이가 처지지 않게 합니다."]},
+  birddog:{n:"버드독",r:"한쪽 8~10회",q:"버드독 운동",c:["네발 자세에서 반대쪽 팔과 다리를 뻗습니다.","허리가 돌아가지 않게 천천히."]},
+  side:{n:"사이드 플랭크",r:"한쪽 20~30초",q:"사이드 플랭크 무릎 대고",c:["처음엔 무릎을 대고 해도 됩니다.","옆에서 볼 때 몸이 일직선이 되게 합니다."]},
+  walk:{n:"일립티컬 또는 평지 걷기",r:"40~60분",sets:1,q:"일립티컬 머신 사용법",note:"대화가 가능한 강도. 계단 내리막과 산길은 피합니다.",c:["일립티컬은 저항을 낮게 시작합니다.","걷기는 평지 위주로, 오금이 당기면 속도를 줄입니다."]},
+  pushup:{n:"아침 푸시업",r:"",q:"푸시업 정자세",c:["손은 어깨너비보다 조금 넓게, 몸은 머리부터 발끝까지 일직선.","가슴이 바닥 가까이 내려갈 때까지 내려갑니다.","10개가 안 되면 책상이나 벽을 짚고 합니다.","마지막 세트도 2~3개 더 할 수 있을 때 멈춥니다."]}
+};
+const R = {
+  A:{t:"A · 상체 밀기 + 코어",flow:[10,40,20,20],list:["chest","shoulder","pushdown","deadbug","plank"]},
+  B:{t:"B · 상체 당기기 + 얕은 하체",flow:[10,40,20,20],list:["lat","row","curl","legpress","abd","bridge"]},
+  C:{t:"C · 가벼운 전신 + 코어",flow:[10,25,35,20],light:true,list:["chest","lat","abd","birddog","side"]},
+  R:{t:"가벼운 날",weekend:true,list:["walk","birddog","side"]}
+};
+const ROUTINE_NAME = {A:"A 루틴",B:"B 루틴",C:"C 루틴",R:"주말 활동"};
+const exSets = (k,id) => EX[id].sets || setsFor(k);
+
+/* 아침 푸시업: 평일만. 최대 개수 기준으로 세트당 개수 계산, 월·목은 절반 */
+function pushupPlan(){
+  const max = parseInt(weights.pushupMax,10);
+  const half = cur==="A";
+  if(!max) return {txt:"최대 개수를 입력하면 세트당 개수를 계산합니다", half, sets: half?2:3};
+  let per;
+  if(max<10) per="인클라인 8~10회";
+  else if(max<20){ const p=Math.round(max*0.55); per=p+"회"; }
+  else per="10~12회";
+  return {txt:per, half, sets: half?2:3};
+}
+
+const today = new Date(); today.setHours(0,0,0,0);
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayId = ymd(today);
+const diff = Math.floor((today-START)/86400000);
+const week = diff<0 ? 0 : Math.floor(diff/7)+1;
+const baseSets = week<=2 ? 2 : 3;
+const setsFor = k => R[k].light ? 2 : baseSets;
+
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+/* 저장소: 이 휴대폰 브라우저. 백업 파일로 내보내기/불러오기 */
+let logs = lsGet("logs",{});
+let weights = lsGet("weights",{});
+let checks = lsGet("chk-"+todayId,{});
+const Store = {
+  async saveLog(log){ logs[log.date]=log; lsSet("logs",logs); },
+  async deleteLog(date){ delete logs[date]; lsSet("logs",logs); },
+  saveWeights(){ lsSet("weights",weights); }
+};
+// 오래된 일별 체크 정리
+try{ Object.keys(localStorage).forEach(k=>{ if(k.startsWith("chk-")&&k!=="chk-"+todayId) localStorage.removeItem(k); }); }catch(e){}
+
+function exportBackup(){
+  const data={app:"workout",version:1,exportedAt:new Date().toISOString(),logs,weights};
+  const blob=new Blob([JSON.stringify(data,null,1)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob); a.download="운동기록_"+todayId+".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  document.getElementById("bkMsg").textContent="백업 파일을 저장했습니다. 파일 앱이나 iCloud에 보관해 두세요.";
+}
+function importBackup(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    const msg=document.getElementById("bkMsg");
+    try{
+      const d=JSON.parse(r.result);
+      if(d.app!=="workout"||typeof d.logs!=="object") throw 0;
+      logs=Object.assign({},logs,d.logs); weights=Object.assign({},d.weights||{},weights);
+      lsSet("logs",logs); lsSet("weights",weights);
+      msg.textContent="기록 "+Object.keys(d.logs).length+"건을 불러왔습니다.";
+      renderAll();
+    }catch(e){ msg.textContent="이 앱의 백업 파일이 아닙니다. 운동기록_날짜.json 파일을 골라 주세요."; }
+  };
+  r.readAsText(file);
+}
+
+document.getElementById("date").textContent =
+  today.getFullYear()+"."+(today.getMonth()+1)+"."+today.getDate()+" ("+DAYS[today.getDay()]+")";
+
+let cur = "A", picked = false;
+let view = "today";
+
+function exCard(k,id,n,extra){
+  const e=EX[id], ck=k+"-"+id, got=checks[ck]||0;
+  const card=document.createElement("div"); card.className="ex"+(got>=n?" complete":"");
+  let sets=""; for(let i=1;i<=n;i++) sets+=`<button class="set${i<=got?" on":""}" data-i="${i}" aria-label="${i}세트">${n===1?"✓":i}</button>`;
+  const isW=!BODYWEIGHT.includes(id);
+  card.innerHTML=`
+    <div class="row"><span class="name">${e.n}</span><span class="rx">${n===1?e.r:n+" × "+(extra&&extra.rx||e.r)}</span></div>
+    ${extra&&extra.note?`<div class="note">${extra.note}</div>`:e.note?`<div class="note">${e.note}</div>`:""}
+    <div class="sets">${sets}${isW?`<label class="wt">무게<input id="w-${id}" inputmode="decimal" placeholder="kg" value="${weights[id]||""}"></label>`:""}${extra&&extra.input||""}</div>
+    <details><summary>사용법</summary><ul>${e.c.map(x=>"<li>"+x+"</li>").join("")}</ul>
+    <a class="yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.q)}" target="_blank" rel="noopener">유튜브에서 자세 보기 ↗</a></details>`;
+  card.querySelectorAll(".set").forEach(b=>b.addEventListener("click",()=>{
+    const i=+b.dataset.i; checks[ck]=(checks[ck]===i)?i-1:i; lsSet("chk-"+todayId,checks); renderToday();
+  }));
+  const inp=card.querySelector("input[id^='w-']");
+  if(inp) inp.addEventListener("change",()=>{weights[id]=inp.value.trim(); Store.saveWeights();});
+  const mx=card.querySelector("#pushupMax");
+  if(mx) mx.addEventListener("change",()=>{weights.pushupMax=mx.value.trim(); Store.saveWeights(); renderToday();});
+  return card;
+}
+
+function renderToday(){
+  if(!picked) cur=nextRoutine();
+  const k=cur, r=R[k];
+  const isWeekday = today.getDay()>=1 && today.getDay()<=5;
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===k?"true":"false"));
+  document.getElementById("title").textContent = (k===nextRoutine()?"오늘 할 차례 · ":"")+r.t;
+  const meta=document.getElementById("meta"); meta.innerHTML="";
+  const chips=[];
+  if(!r.weekend){ week===0 ? chips.push(["10월 26일(월) 시작",""]) : chips.push([week+"주차",""],[setsFor(k)+"세트"+(r.light?" · 가볍게":""),""]); }
+  if(logs[todayId]) chips.push(["오늘 기록 저장됨 ("+ROUTINE_NAME[logs[todayId].routine]+")","ok"]);
+  chips.forEach(([t,c])=>{const s=document.createElement("span");s.className="chip "+c;s.textContent=t;meta.appendChild(s)});
+  const body=document.getElementById("body"); body.innerHTML="";
+
+  // 아침 푸시업 (평일)
+  if(isWeekday && !r.weekend){
+    const h0=document.createElement("h2"); h0.textContent="아침 · 회사에서"; body.appendChild(h0);
+    const p=pushupPlan();
+    body.appendChild(exCard("AM","pushup",p.sets,{
+      rx:p.txt,
+      note:p.half?"오늘 저녁 A 루틴(가슴·어깨·삼두)을 할 거라면 2세트만 합니다.":"",
+      input:`<label class="wt">최대<input id="pushupMax" inputmode="numeric" placeholder="개" value="${weights.pushupMax||""}"></label>`
+    }));
+  }
+
+  if(r.weekend){
+    const rest=document.createElement("div"); rest.className="rest";
+    rest.textContent="당직이나 피곤해서 근력이 어려운 날 고릅니다. 기록해도 근력 순서는 넘어가지 않습니다.";
+    body.appendChild(rest);
+  }else{
+    const f=r.flow, flow=document.createElement("div"); flow.className="flow";
+    flow.innerHTML=`<div><b>${f[0]}분</b>일립티컬</div><div class="main"><b>${f[1]}분</b>근력</div><div><b>${f[2]}분</b>일립티컬</div><div><b>${f[3]}분</b>샤워</div>`;
+    body.appendChild(flow);
+  }
+  const h=document.createElement("h2"); h.textContent=r.weekend?"할 것":"저녁 · 근력 순서"; body.appendChild(h);
+  r.list.forEach(id=>body.appendChild(exCard(k,id,exSets(k,id))));
+
+  const btn=document.createElement("button"); btn.className="save"+(logs[todayId]?" saved":"");
+  btn.id="saveBtn";
+  btn.textContent = logs[todayId] ? "다시 저장 (오늘 기록 덮어쓰기)" : "운동 완료 · 기록 저장";
+  const msg=document.createElement("div"); msg.className="msg";
+  btn.addEventListener("click",async()=>{
+    const si=seqInfo(); const log={date:todayId,routine:k,seq:(k===si.k?si.seq:SEQ.indexOf(k)),sets:{},weights:{},savedAt:Date.now()};
+    R[k].list.forEach(id=>{ log.sets[id]=checks[k+"-"+id]||0; if(!BODYWEIGHT.includes(id)&&weights[id]) log.weights[id]=parseFloat(weights[id])||weights[id]; });
+    if(checks["AM-pushup"]) log.pushup=checks["AM-pushup"];
+    btn.disabled=true;
+    try{ await Store.saveLog(log); msg.textContent="저장했습니다."; renderAll(); }
+    catch(e){ msg.textContent="저장하지 못했습니다. 잠시 후 다시 눌러 주세요."; btn.disabled=false; }
+  });
+  body.appendChild(btn); body.appendChild(msg);
+}
+function renderLog(){
+  const el=document.getElementById("logView"); el.innerHTML="";
+  const dates=Object.keys(logs).sort().reverse();
+  // 이번 주
+  const mon=new Date(today); mon.setDate(today.getDate()-((today.getDay()+6)%7));
+  let cnt=0, cells="";
+  for(let i=0;i<7;i++){ const d=new Date(mon); d.setDate(mon.getDate()+i); const id=ymd(d); const on=!!logs[id]; if(on&&logs[id].routine!=="R")cnt++;
+    cells+=`<div class="${on?"on":""}${id===todayId?" today":""}">${DAYS[d.getDay()]}</div>`; }
+  const wk=document.createElement("section"); wk.className="week";
+  wk.innerHTML=`<h2 style="margin:0">이번 주</h2><div class="big">${cnt}<small> / 5회 (근력)</small></div><div class="days">${cells}</div>`;
+  el.appendChild(wk);
+  // 무게 변화
+  const h1=document.createElement("h2"); h1.textContent="종목별 무게 변화 (kg)"; el.appendChild(h1);
+  const asc=[...dates].reverse(), rows=[];
+  Object.keys(EX).filter(id=>!BODYWEIGHT.includes(id)).forEach(id=>{
+    const seq=[]; asc.forEach(d=>{const w=logs[d].weights&&logs[d].weights[id]; if(w!==undefined&&w!==""&&seq[seq.length-1]!==w) seq.push(w);});
+    if(seq.length) rows.push(`<div><span>${EX[id].n}</span><span>${seq.slice(-6).map((w,i,a)=>i===a.length-1&&a.length>1&&+w>+a[0]?`<b class="up">${w}</b>`:w).join(" → ")}</span></div>`);
+  });
+  if(rows.length){ const p=document.createElement("div"); p.className="prog"; p.innerHTML=rows.join(""); el.appendChild(p); }
+  else el.insertAdjacentHTML("beforeend",'<div class="empty">무게를 입력하고 기록을 저장하면 종목별 변화가 여기에 쌓입니다.</div>');
+  // 목록
+  const h2=document.createElement("h2"); h2.textContent="지난 운동"; el.appendChild(h2);
+  if(!dates.length){ el.insertAdjacentHTML("beforeend",'<div class="empty">아직 저장한 운동이 없습니다. 오늘 화면 맨 아래 "운동 완료 · 기록 저장"을 누르면 여기에 남습니다.</div>'); return; }
+  dates.forEach(d=>{
+    const L=logs[d], dt=new Date(d+"T00:00:00");
+    const list=R[L.routine]?R[L.routine].list:Object.keys(L.sets||{});
+    const total=list.reduce((s,id)=>s+((L.sets||{})[id]||0),0);
+    const ws=Object.keys(L.weights||{}).map(id=>(EX[id]?EX[id].n.replace(" 머신",""):id)+" "+L.weights[id]).join(", ");
+    const c=document.createElement("div"); c.className="log";
+    c.innerHTML=`<div class="top"><span class="d">${dt.getMonth()+1}.${dt.getDate()} (${DAYS[dt.getDay()]})</span><span class="tag">${ROUTINE_NAME[L.routine]||L.routine} · ${total}세트</span><button class="del" id="del-${d}">삭제</button></div>${(ws||L.pushup)?`<div class="detail">${[L.pushup?"아침 푸시업 "+L.pushup+"세트":"",ws].filter(Boolean).join(" · ")}</div>`:""}`;
+    const del=c.querySelector(".del");
+    del.addEventListener("click",async()=>{
+      if(!del.classList.contains("arm")){ del.classList.add("arm"); del.textContent="한 번 더 누르면 삭제"; return; }
+      try{ await Store.deleteLog(d); renderAll(); }catch(e){ del.textContent="삭제 실패"; }
+    });
+    el.appendChild(c);
+  });
+}
+
+function renderAll(){
+  document.getElementById("todayView").hidden = view!=="today";
+  document.getElementById("todayView").style.display = view==="today"?"contents":"none";
+  document.getElementById("logView").hidden = view!=="log";
+  document.getElementById("backup").hidden = view!=="log";
+  document.querySelectorAll(".views button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===view?"true":"false"));
+  renderToday(); renderLog();
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{cur=b.dataset.k;picked=true;renderToday();}));
+document.querySelectorAll(".views button").forEach(b=>b.addEventListener("click",()=>{view=b.dataset.v;renderAll();}));
+renderAll();
+document.getElementById("bkExport").addEventListener("click",exportBackup);
+document.getElementById("bkImport").addEventListener("change",e=>{ if(e.target.files[0]) importBackup(e.target.files[0]); e.target.value=""; });
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+
+</body>
+</html>

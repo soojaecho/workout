@@ -109,6 +109,8 @@ details ul li+li{margin-top:3px}
 .bk-btns button,.bk-imp{font:inherit;font-weight:500;font-size:14px;text-align:center;padding:11px 0;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
 .bk-btns button{background:var(--accent);color:var(--bg)}
 .store{display:none}
+.month{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:14px;color:var(--muted)}
+.month b{font-family:var(--mono);color:var(--fg);font-size:16px}
 @media (prefers-reduced-motion:no-preference){.set,.save{transition:background .15s,border-color .15s}}
 </style>
 </head>
@@ -178,11 +180,12 @@ const BODYWEIGHT = ["deadbug","plank","birddog","side","bridge","walk","pushup"]
 const EX = {
   chest:{n:"체스트 프레스 머신",r:"12~15회",q:"체스트 프레스 머신 사용법",c:["의자 높이를 손잡이가 가슴 중간에 오도록 맞춥니다.","등과 엉덩이를 등받이에 붙인 채 밀어냅니다.","끝에서 팔꿈치를 완전히 잠그지 말고 천천히 돌아옵니다."]},
   shoulder:{n:"숄더 프레스 머신",r:"12~15회",q:"숄더 프레스 머신 사용법",c:["시작할 때 손잡이가 어깨 높이에 오게 의자를 맞춥니다.","허리를 과하게 젖히지 않습니다.","위로 밀고 귀 옆 높이까지 천천히 내립니다."]},
-  pushdown:{n:"케이블 푸시다운",r:"12~15회",q:"케이블 트라이셉스 푸시다운",c:["로프나 짧은 바를 잡고 팔꿈치를 옆구리에 붙입니다.","팔꿈치는 고정한 채 아래로 끝까지 폅니다.","올라올 때 2초 정도 천천히."]},
+  triext:{n:"덤벨 트라이셉스 익스텐션",r:"12~15회",q:"시티드 덤벨 오버헤드 트라이셉스 익스텐션",c:["등받이 있는 의자에 앉아 덤벨 하나를 두 손으로 잡고 머리 위로 듭니다.","팔꿈치는 앞을 향하게 고정하고 머리 뒤로 천천히 내렸다 폅니다.","팔꿈치나 어깨가 불편하면 무게를 줄이거나 이 종목은 뺍니다."]},
   lat:{n:"랫풀다운",r:"12~15회",q:"랫풀다운 머신 사용법",c:["허벅지 패드로 몸을 고정합니다.","가슴을 살짝 내밀고 바를 쇄골 쪽으로 당깁니다.","몸을 뒤로 크게 젖히지 않습니다."]},
   row:{n:"시티드 로우 머신",r:"12~15회",q:"시티드 로우 머신 사용법",c:["가슴을 패드에 대고 앉습니다.","팔꿈치를 뒤로 보내며 어깨뼈를 모읍니다.","팔이 다 펴질 때까지 천천히 돌아옵니다."]},
-  curl:{n:"케이블 컬",r:"12~15회",q:"케이블 바이셉스 컬",c:["팔꿈치를 옆구리에 고정합니다.","몸을 흔들지 않고 팔만 굽힙니다."]},
+  dbcurl:{n:"덤벨 컬",r:"12~15회",q:"시티드 덤벨 컬",c:["등받이 의자에 앉아 양손에 덤벨을 듭니다.","팔꿈치를 옆구리에 붙이고 몸을 흔들지 않게 굽힙니다.","내릴 때 2초 정도 천천히."]},
   legpress:{n:"레그프레스",r:"12~15회",q:"레그프레스 머신 사용법",note:"무릎 60도 이내로만. 오금이 당기면 바로 중단.",c:["의자를 뒤로 빼서 시작 자세에서 무릎이 많이 굽지 않게 맞춥니다.","발은 발판 위쪽에 어깨너비로 둡니다.","조금만 내렸다가 밀고, 끝에서 무릎을 잠그지 않습니다."]},
+  rdl:{n:"덤벨 루마니안 데드리프트",r:"12회",sets:2,q:"덤벨 루마니안 데드리프트 자세",note:"덤벨은 무릎 바로 아래까지만. 오금이 당기면 오늘은 빼고, 다음 날 걸을 때 당김이 심하면 당분간 제외.",c:["양손에 덤벨을 들고 발을 골반 너비로 섭니다.","무릎은 살짝만 굽힌 채 고정하고, 엉덩이를 뒤로 빼면서 상체를 숙입니다.","등은 곧게 편 상태를 유지하고, 덤벨은 허벅지 앞을 스치듯 내립니다.","엉덩이를 앞으로 밀며 일어섭니다. 허리로 당기지 않습니다."]},
   abd:{n:"힙 어브덕션 머신",r:"15회",q:"힙 어브덕션 머신 사용법",c:["다리 바깥쪽에 패드가 오게 앉습니다.","바깥으로 밀고 2초 동안 천천히 모읍니다."]},
   bridge:{n:"글루트 브릿지",r:"15회",q:"글루트 브릿지 자세",c:["바닥에 누워 무릎을 세우고 발을 엉덩이에서 조금 멀리 둡니다.","엉덩이를 들어 어깨-엉덩이-무릎이 일직선이 되게 합니다.","오금이 당기면 발을 더 멀리 둡니다."]},
   deadbug:{n:"데드버그",r:"한쪽 8~10회",q:"데드버그 운동",c:["누워서 허리를 바닥에 붙입니다.","반대쪽 팔과 다리를 천천히 뻗었다 돌아옵니다."]},
@@ -193,8 +196,8 @@ const EX = {
   pushup:{n:"아침 푸시업",r:"",q:"푸시업 정자세",c:["손은 어깨너비보다 조금 넓게, 몸은 머리부터 발끝까지 일직선.","가슴이 바닥 가까이 내려갈 때까지 내려갑니다.","10개가 안 되면 책상이나 벽을 짚고 합니다.","마지막 세트도 2~3개 더 할 수 있을 때 멈춥니다."]}
 };
 const R = {
-  A:{t:"A · 상체 밀기 + 코어",flow:[10,40,20,20],list:["chest","shoulder","pushdown","deadbug","plank"]},
-  B:{t:"B · 상체 당기기 + 얕은 하체",flow:[10,40,20,20],list:["lat","row","curl","legpress","abd","bridge"]},
+  A:{t:"A · 상체 밀기 + 코어",flow:[10,40,20,20],list:["chest","shoulder","triext","deadbug","plank"]},
+  B:{t:"B · 상체 당기기 + 얕은 하체",flow:[10,40,20,20],list:["lat","row","rdl","dbcurl","legpress","abd","bridge"]},
   C:{t:"C · 가벼운 전신 + 코어",flow:[10,25,35,20],light:true,list:["chest","lat","abd","birddog","side"]},
   R:{t:"가벼운 날",weekend:true,list:["walk","birddog","side"]}
 };
@@ -350,6 +353,12 @@ function renderLog(){
   const wk=document.createElement("section"); wk.className="week";
   wk.innerHTML=`<h2 style="margin:0">이번 주</h2><div class="big">${cnt}<small> / 5회 (근력)</small></div><div class="days">${cells}</div>`;
   el.appendChild(wk);
+  // 이번 달 (간단히)
+  const ym=todayId.slice(0,7); let mS=0,mL=0;
+  Object.keys(logs).forEach(d=>{ if(d.startsWith(ym)) (logs[d].routine==="R"?mL++:mS++); });
+  const mo=document.createElement("section"); mo.className="month";
+  mo.innerHTML=`<span>${today.getMonth()+1}월</span><span>근력 <b>${mS}</b>회${mL?` · 가벼운 날 <b>${mL}</b>회`:""}</span>`;
+  el.appendChild(mo);
   // 무게 변화
   const h1=document.createElement("h2"); h1.textContent="종목별 무게 변화 (kg)"; el.appendChild(h1);
   const asc=[...dates].reverse(), rows=[];
